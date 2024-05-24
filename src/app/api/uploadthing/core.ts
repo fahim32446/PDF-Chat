@@ -1,12 +1,16 @@
 import { db } from '@/db';
-import { getPineconeClient } from '@/lib/pinecone';
 import { getKindeServerSession } from '@kinde-oss/kinde-auth-nextjs/server';
+import { PineconeStore } from '@langchain/pinecone';
+import {
+  Document,
+  RecursiveCharacterTextSplitter,
+} from '@pinecone-database/doc-splitter';
+import { Pinecone } from '@pinecone-database/pinecone';
 import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
-import { OpenAIEmbeddings } from 'langchain/embeddings/openai';
-import { PineconeStore } from 'langchain/vectorstores/pinecone';
+
+import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 
 import { createUploadthing, type FileRouter } from 'uploadthing/next';
-
 
 const f = createUploadthing();
 
@@ -41,17 +45,56 @@ export const ourFileRouter = {
         const pagesAmt = pageLevelDocs.length;
 
         // vectorize and index entire document
-        const pinecone = await getPineconeClient();
+
+        const pinecone = new Pinecone();
         const pineconeIndex = pinecone.Index('pdf-chat');
 
-        const embeddings = new OpenAIEmbeddings({
-          openAIApiKey: process.env.OPENAI_API_KEY,
+        const embeddings = new GoogleGenerativeAIEmbeddings({
+          model: 'embedding-001', // 768 dimensions
         });
 
-        await PineconeStore.fromDocuments(pageLevelDocs, embeddings, {
-          pineconeIndex,
-          namespace: createdFile.id,
-        });
+        console.log({ embeddings, pageLevelDocs });
+
+        // const res = await embeddings.embedQuery('OK Google');
+
+        // console.log(res, res.length);
+
+        try {
+          const res = await PineconeStore.fromDocuments(
+            pageLevelDocs,
+            embeddings,
+            {
+              pineconeIndex,
+              maxConcurrency: 5,
+              namespace: file.key,
+            }
+          );
+          console.log({ res });
+        } catch (error) {
+          console.log(error);
+        }
+
+        // const pinecone = await getPineconeClient();
+        // const pineconeIndex = pinecone.Index('pdf-chat');
+
+        // const embeddings = new OpenAIEmbeddings({
+        //   openAIApiKey:
+        //     'sk-proj-evCNThgoYf5KjHtpN2D0T3BlbkFJ3FsGfXC47Yq73U2y7UC4',
+        // });
+
+        try {
+          // const res = await PineconeStore.fromDocuments(
+          //   pageLevelDocs,
+          //   embeddings,
+          //   {
+          //     pineconeIndex,
+          //     namespace: createdFile.id,
+          //   }
+          // );
+          // console.log(res);
+        } catch (error) {
+          console.log(error);
+        }
 
         await db.file.update({
           data: {
@@ -75,3 +118,28 @@ export const ourFileRouter = {
 } satisfies FileRouter;
 
 export type OurFileRouter = typeof ourFileRouter;
+
+async function prepareDocument(page) {
+  let { pageContent, metadata } = page;
+  console.log('_____________HEY________________');
+
+  const enc = new TextEncoder();
+  pageContent = pageContent.replace(/\n/g, '');
+  // split the docs
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 500,
+    chunkOverlap: 50,
+  });
+  const docs = await splitter.splitDocuments([
+    new Document({
+      pageContent,
+      metadata: {
+        pageNumber: metadata.loc.pageNumber,
+        text: new TextDecoder('utf-8').decode(
+          enc.encode(pageContent).slice(0, 36000)
+        ),
+      },
+    }),
+  ]);
+  return docs;
+}
