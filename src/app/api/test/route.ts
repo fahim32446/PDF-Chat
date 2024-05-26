@@ -1,12 +1,12 @@
+import { db } from '@/db';
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import {
   Document,
   RecursiveCharacterTextSplitter,
 } from '@pinecone-database/doc-splitter';
 import { Pinecone } from '@pinecone-database/pinecone';
-import md5 from 'md5';
-
 import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
+import md5 from 'md5';
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { NextResponse } from 'next/server';
 
@@ -18,9 +18,22 @@ export async function GET(
   req: NextApiRequest,
   res: NextApiResponse<ResponseData>
 ) {
-  const pinecone = new Pinecone({
-    apiKey: '33a00af7-61b2-4699-bf43-f67effd4bc35',
-  });
+  const url = new URL(req.url!);
+  const params = new URLSearchParams(url.search);
+  const file_id = params.get('file_id');
+
+  const files = await db.file.findFirst({ where: { id: file_id! } });
+
+  if (!files?.url)
+    return NextResponse.json({
+      success: false,
+      message: 'No uploaded file url found',
+    });
+
+  const pinecone = new Pinecone();
+  //   {
+  //   apiKey: '33a00af7-61b2-4699-bf43-f67effd4bc35',
+  // }
 
   const pineconeIndex = pinecone.Index('pdf-chat');
   const embeddings = new GoogleGenerativeAIEmbeddings({
@@ -52,9 +65,7 @@ export async function GET(
   }
 
   try {
-    const response = await fetch(
-      'https://utfs.io/f/6401e859-5955-47b2-a7ea-157405f51c04-nttamu.pdf'
-    );
+    const response = await fetch(files?.url!);
     const blob = await response.blob();
     const loader = new PDFLoader(blob);
 
@@ -66,12 +77,13 @@ export async function GET(
     // 3. victories and embed individual documents
     const vectors = await Promise.all(documents.flat().map(embedDocument));
     //@ts-ignore
-    const res = await pineconeIndex.namespace('ns5').upsert(vectors);
+    const res = await pineconeIndex.namespace(files?.id).upsert(vectors);
 
     return NextResponse.json({
       success: true,
       status: 200,
       message: 'Successfully vector inserted',
+      documents,
     });
   } catch (error) {
     console.log(error);
