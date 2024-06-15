@@ -9,10 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^0.0.20",
     "@hookform/resolvers": "^3.3.4",
     "@kinde-oss/kinde-auth-nextjs": "^2.2.0",
     "@langchain/google-genai": "^0.0.16",
     "@langchain/pinecone": "^0.0.6",
+    "@mantine/hooks": "^7.10.2",
     "@pinecone-database/doc-splitter": "^0.0.1",
     "@pinecone-database/pinecone": "^2.2.0",
     "@prisma/client": "^5.12.1",
@@ -51,6 +53,7 @@
     "@trpc/react-query": "^11.0.0-next.320",
     "@trpc/server": "^11.0.0-next.320",
     "@uploadthing/react": "^6.4.4",
+    "ai": "^3.1.35",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "cmdk": "^1.0.0",
@@ -69,6 +72,7 @@
     "react-dropzone": "^14.2.3",
     "react-hook-form": "^7.51.2",
     "react-loading-skeleton": "^3.4.0",
+    "react-markdown": "^9.0.1",
     "react-pdf": "^7.7.1",
     "react-resizable-panels": "^2.0.16",
     "react-resize-detector": "^10.0.1",

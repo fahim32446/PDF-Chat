@@ -10,3 +10,5 @@ export function absoluteUrl(path: string) {
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
+
+export const INFINITE_QUERY_LIMIT = 10;
