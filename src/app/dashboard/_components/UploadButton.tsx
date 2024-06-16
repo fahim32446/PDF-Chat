@@ -12,7 +12,11 @@ import Dropzone from 'react-dropzone';
 
 type Props = {};
 
-const UploadButton = ({ isSubscribed }: { isSubscribed?: boolean }) => {
+const UploadButton = ({
+  isSubscribed,
+}: {
+  isSubscribed?: boolean | undefined;
+}) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   return (
     <Dialog
@@ -28,7 +32,7 @@ const UploadButton = ({ isSubscribed }: { isSubscribed?: boolean }) => {
       </DialogTrigger>
 
       <DialogContent>
-        <UploadDropzone isSubscribed={isSubscribed} />
+        <UploadDropzone isSubscribed={isSubscribed!} />
       </DialogContent>
     </Dialog>
   );

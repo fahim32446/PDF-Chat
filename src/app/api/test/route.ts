@@ -7,17 +7,13 @@ import {
 import { Pinecone } from '@pinecone-database/pinecone';
 import { PDFLoader } from 'langchain/document_loaders/fs/pdf';
 import md5 from 'md5';
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 type ResponseData = {
   message: string;
 };
 
-export async function GET(
-  req: NextApiRequest,
-  res: NextApiResponse<ResponseData>
-) {
+export async function GET(req: NextRequest) {
   const url = new URL(req.url!);
   const params = new URLSearchParams(url.search);
   const file_id = params.get('file_id');
